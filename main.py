@@ -195,7 +195,7 @@ async def say_adm(ctx, arg1):
     global channel
 
     for vc in bot.voice_clients:
-        if isinstance(channel[vc.guild.id], type(None)):
+        if not vc.guild.id in channel:
             continue
         for txch in vc.guild.text_channels:
             if txch.id == channel[vc.guild.id]:
