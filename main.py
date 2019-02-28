@@ -198,7 +198,7 @@ async def say_adm(ctx, arg1):
         if not vc.guild.id in channel:
             continue
         for txch in vc.guild.text_channels:
-            if txch.id == channel[vc.guild.id]:
+            if txch.id == channel.get(vc.guild.id):
                 await txch.send('[INFO] {}'.format(arg1))
 # ここまで
 
