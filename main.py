@@ -194,12 +194,16 @@ async def say_adm(ctx, arg1):
         return
     global channel
 
+    # ボイスクライアント全てで処理
     for vc in bot.voice_clients:
-        if isinstance(channel[vc.guild.id], type(None)):
+        # テキストチャンネルが登録されてなければそのサーバは無視
+        if not vc.guild.id in channel:
             continue
+        # ボイスクライアントがあるサーバのテキストチャンネルを全て取得
         for txch in vc.guild.text_channels:
-            if txch.id == channel[vc.guild.id]:
-                await txch.send('[INFO] {}'.format(arg1))
+            # ギルド全てのテキストチャンネルのIDと、喋太郎召喚チャンネルのIDを比較
+            if txch.id == channel.get(vc.guild.id):
+                await txch.send('[INFO] {}'.format(arg1)) # 入力されたお知らせを通達
 # ここまで
 
 # 喋太郎の発言を止める
