@@ -499,6 +499,48 @@ async def on_message(message):
         await asyncio.sleep(0.5)
         os.remove(voice_mess) #rawファイルの削除
 
+# 自動退出をする処理
+@bot.event
+async def on_voice_state_update(member, before, after):
+    global voice
+    global channel
+
+    # ユーザがボイチャに参加してきた場合は無視
+    if before.channel is None:
+        return
+    
+    # ユーザが切断した場合じゃなくても無視
+    if after.channel is not None:
+        return
+
+    guild = before.channel.guild # ステータス変更前のサーバを取得
+
+    # そのサーバでボイチャに参加してなければ無視
+    if voice.get(guild.id) is None:
+        return
+
+    # 発生したイベントが、参加してるボイチャと別のボイチャなら無視
+    if not voice.get(guild.id).channel == before.channel:
+        return
+
+    vc_members = before.channel.members # ボイチャにいたメンバーを取得
+    
+    # メンバーがbotのみ(喋太郎含む)かどうか判断
+    is_only_bot = False
+    for member in vc_members:
+        if member.bot == True:
+            is_only_bot = True
+
+    # botだけ残った場合、切断
+    if is_only_bot == True:
+        for txch in guild.text_channels:
+            if txch.id == channel.get(guild.id):
+                await txch.send('じゃあの')
+                del channel[guild.id]
+
+        await voice[guild.id].disconnect()
+        del voice[guild.id]
+
 def add_guild_db(guild):
     str_id = str(guild.id)
     guilds = ctrl_db.get_guild(str_id)
