@@ -495,6 +495,31 @@ async def on_message(message):
         await asyncio.sleep(0.5)
         os.remove(voice_mess) #rawファイルの削除
 
+@bot.event
+async def on_voice_state_update(member, before, after):
+    global voice
+    global channel
+
+    if before.channel is None:
+        return
+
+    guild = before.channel.guild
+
+    if voice.get(guild.id) is None:
+        return
+
+    vc_members = before.channel.members
+    print(vc_members)
+    
+    if len(vc_members) == 1:
+        for txch in guild.text_channels:
+            if txch.id == channel.get(guild.id):
+                await txch.send('じゃあの')
+                del channel[guild.id]
+
+        await voice[guild_id].disconnect()
+        del voice[guild.id]
+
 def add_guild_db(guild):
     str_id = str(guild.id)
     guilds = ctrl_db.get_guild(str_id)
