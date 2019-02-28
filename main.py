@@ -504,6 +504,10 @@ async def on_voice_state_update(member, before, after):
     # ユーザがボイチャに参加してきた場合は無視
     if before.channel is None:
         return
+    
+    # ユーザが切断した場合じゃなくても無視
+    if after.channel is not None:
+        return
 
     guild = before.channel.guild # ステータス変更前のサーバを取得
 
@@ -517,13 +521,13 @@ async def on_voice_state_update(member, before, after):
 
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
-    # メンバーがbotのみかどうか判断
+    # メンバーがbotのみ(喋太郎含む)かどうか判断
     is_only_bot = False
     for member in vc_members:
         if member.bot == True:
             is_only_bot = True
-            
-    # 喋太郎のみか、
+
+    # botだけ残った場合、切断
     if is_only_bot == True:
         for txch in guild.text_channels:
             if txch.id == channel.get(guild.id):
