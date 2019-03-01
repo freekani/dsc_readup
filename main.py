@@ -526,10 +526,11 @@ async def on_voice_state_update(member, before, after):
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
     # メンバーがbotのみ(喋太郎含む)かどうか判断
-    is_only_bot = False
+    is_only_bot = True
     for member in vc_members:
-        if member.bot == True:
-            is_only_bot = True
+        # 1人でも一般ユーザがいたらFalse
+        if member.bot == False:
+            is_only_bot = False
 
     # botだけ残った場合、切断
     if is_only_bot == True:
