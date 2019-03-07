@@ -204,12 +204,40 @@ def set_reqcount(date, time):
     found_rec = session.query(CountRequest).filter_by(date = date, hour = time).one_or_none()
 
     if isinstance(found_rec, type(None)):
-        newct = CountRequest(date = date, hour = time)
-
-        session.add(newct)
+        get_recs = session.query(CountRequest.hour).filter_by(date = date).all()
+        recs = list()
+        for rec in get_recs:
+            recs.append(rec.hour)
+        zero_cts = list()
+        for i in range(0, time+1):
+            if not i in recs:
+                zero_ct = CountRequest(date = date, hour = i)
+                zero_cts.append(zero_ct)
+        session.add_all(zero_cts)
         session.commit()
 
         found_rec = session.query(CountRequest).filter_by(date = date, hour = time).one()
     
     found_rec.count += 1
     session.commit()
+
+def zero_ini():
+    oldday = datetime.date(2019, 2, 22)
+    nowday = datetime.date.today()
+    
+    for i in date_range(oldday, nowday):
+        get_recs = session.query(CountRequest.hour).filter_by(date = i).all()
+        recs = list()
+        for rec in get_recs:
+            recs.append(rec.hour)
+        zero_cts = list()
+        for k in range(24):
+            if not k in recs:
+                zero_ct = CountRequest(date = i, hour = k)
+                zero_cts.append(zero_ct)
+        session.add_all(zero_cts)
+        session.commit()
+
+def date_range(start_date, end_date):
+    diff = (end_date-start_date).days + 1
+    return (start_date + datetime.timedelta(i) for i in range(diff))
