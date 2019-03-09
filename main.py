@@ -253,7 +253,11 @@ async def wbook(ctx, arg1='emp', arg2='emp', arg3='emp'):
         if arg2 == 'emp' or arg3 == 'emp':
             await ctx.send('引数が不足してるで。{}wbook helpを見てみ。'.format(prefix))
         # 辞書追加、あるいはアップデート
-        ctrl_db.add_dict(arg2, arg3, str_id)
+        try:
+            ctrl_db.add_dict(arg2, arg3, str_id)
+            await ctx.send('{}:{}を辞書に追加したで。'.format(arg2, arg3))
+        except:
+            await ctx.send('すまん、辞書の追加に失敗したわ。')
 
     elif arg1 == 'delete':
         if arg2 == 'emp':
