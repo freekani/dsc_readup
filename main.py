@@ -443,6 +443,14 @@ async def on_message(message):
 
     # メッセージを、呼び出されたチャンネルで受信した場合
     if message.channel.id == channel[guild_id]:
+        # this is easteregg01
+        if message.content == 'はつざつ「屈辱だ…。」':
+            path = 'images/kutsujoku.jpg'
+            if os.path.isfile(path):
+                with open('images/kutsujoku.jpg') as f:
+                    htzt_f = discord.File(f)
+                    await message.channel.send(file=htzt_f)
+                    return
         # URLを、"URL"へ置換
         get_msg = re.sub(r'http(s)?://([\w-]+\.)+[\w-]+(/[-\w ./?%&=]*)?', 'URL', message.content)
         # reactionの置換
