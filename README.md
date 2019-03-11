@@ -62,5 +62,5 @@ $ python main.py
 でBotが起動します。
 
 ## LICENSE
-This software is released under the MIT License, see LICENSE.txt.
-
+This software is released under the MIT License, see LICENSE.txt.  
+images以下の画像についての著作権は、作者様に帰属します。
