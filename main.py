@@ -447,7 +447,7 @@ async def on_message(message):
         if message.content == 'はつざつ「屈辱だ…。」':
             path = 'images/kutsujoku.jpg'
             if os.path.isfile(path):
-                with open('images/kutsujoku.jpg') as f:
+                with open(path, mode='rb') as f:
                     htzt_f = discord.File(f)
                     await message.channel.send(file=htzt_f)
                     return
