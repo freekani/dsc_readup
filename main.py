@@ -316,7 +316,11 @@ async def speed(ctx, arg1='emp'):
         return
 
     if speed >= 0.5 and speed <= 4.0:
-        ctrl_db.set_readspeed(speed, struid)
+        try:
+            ctrl_db.set_readspeed(speed, struid)
+            await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format())
+        except:
+            await ctx.send('すまん、登録失敗したわ。')
     else:
         await ctx.send('数値が正しくないで。0.5~4.0を指定してくれな。デフォルトは1.0や。')
 
