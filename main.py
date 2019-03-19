@@ -100,7 +100,8 @@ async def summon(ctx):
     
     if is_dust == True:
         await ctrlvc.disconnect()
-        del channel[guild_id]
+        if guild_id in channel:
+            del channel[guild_id]
     # 召喚した人がボイスチャンネルにいた場合
     if vo_ch is not None: 
         await vo_ch.channel.connect()
@@ -128,7 +129,8 @@ async def bye(ctx):
             if vc.id == guild_id:
                 await vc.disconnect()
         # 情報を削除
-        del channel[guild_id]
+        if guild_id in channel:
+            del channel[guild_id]
 
 # speakerコマンドの処理
 @bot.command()
@@ -157,7 +159,7 @@ async def spk(ctx, arg1='emp'):
         await ctx.send(embed=embed)
     else:
         # 呼び出したチャンネルでコマンドが叩かれた場合
-        if ctx.channel.id == channel[guild_id]:
+        if ctx.channel.id == channel.get(guild_id):
             if cand not in sps:
                 # 引き数のキャラが存在しない場合
                 await ctx.channel.send('おっと、そのキャラは未実装だ。すまねえ。')
@@ -227,7 +229,8 @@ async def vcdel(ctx, arg1):
         if vc.guild.id == guild_id:
             await vc.disconnect() # ボイスチャンネル切断
             # 情報を削除
-            del channel[guild_id]
+            if guild_id in channel:
+                del channel[guild_id]
     
 # ここまで
 
@@ -468,7 +471,7 @@ async def on_message(message):
     str_guild_id = str(guild_id)
 
     # メッセージを、呼び出されたチャンネルで受信した場合
-    if message.channel.id == channel[guild_id]:
+    if message.channel.id == channel.get(guild_id):
         # this is easteregg01
         if message.content == 'はつざつ「屈辱だ…。」':
             path = 'images/kutsujoku.jpg'
@@ -581,7 +584,8 @@ async def on_voice_state_update(member, before, after):
         for txch in guild.text_channels:
             if txch.id == channel.get(guild.id):
                 await txch.send('じゃあの')
-                del channel[guild.id]
+                if guild.id in channel:
+                    del channel[guild.id]
 
         await before.channel.disconnect()
 
