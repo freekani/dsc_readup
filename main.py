@@ -126,7 +126,7 @@ async def bye(ctx):
         await ctx.channel.send('じゃあの')
         # ボイスチャンネル切断
         for vc in bot.voice_clients:
-            if vc.id == guild_id:
+            if vc.guild.id == guild_id:
                 await vc.disconnect()
         # 情報を削除
         if guild_id in channel:
@@ -231,6 +231,7 @@ async def vcdel(ctx, arg1):
             # 情報を削除
             if guild_id in channel:
                 del channel[guild_id]
+            await ctx.channel.send('切断完了')
     
 # ここまで
 
@@ -528,7 +529,7 @@ async def on_message(message):
         
         # 音声ファイルを再生中の場合再生終了まで止まる
         for vc in bot.voice_clients:
-            if vc.id == guild_id:
+            if vc.guild.id == guild_id:
                 ctrlvc = vc
                 break
         
@@ -546,6 +547,10 @@ async def on_message(message):
 async def on_voice_state_update(member, before, after):
     global channel
 
+    # ユーザがボイチャに参加してきた場合は無視
+    if before.channel is None:
+        return
+
     guild = before.channel.guild # ステータス変更前のサーバを取得
     vc_cl = bot.voice_clients
 
@@ -554,16 +559,12 @@ async def on_voice_state_update(member, before, after):
     for vc in vc_cl:
         if vc.guild == guild:
             is_exist = True
-            vc_cl = vc
+            vc_ctl = vc
     if is_exist == False:
         return
 
     # 発生したイベントが、参加してるボイチャと別のボイチャなら無視
-    if not vc_cl == before.channel:
-        return
-
-    # ユーザがボイチャに参加してきた場合は無視
-    if before.channel is None:
+    if not vc_ctl.channel == before.channel:
         return
     
     # ステータス変更前と変更後のチャンネルが同じ場合でも無視
@@ -587,7 +588,7 @@ async def on_voice_state_update(member, before, after):
                 if guild.id in channel:
                     del channel[guild.id]
 
-        await before.channel.disconnect()
+        await vc_ctl.disconnect()
 
 def add_guild_db(guild):
     str_id = str(guild.id)
