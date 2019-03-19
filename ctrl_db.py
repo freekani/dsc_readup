@@ -65,7 +65,7 @@ class CountRequest(Base):
     hour = Column(Integer)
     count = Column(Integer, default = 0)
 
-url = 'postgresql+psycopg2://{}@localhost/{}'.format(df['db_user'], df['db_name'])
+url = 'postgresql+psycopg2://{}:{}@{}/{}'.format(df['db_user'], df['password'], df['host'], df['db_name'])
 engine = create_engine(url)
 
 def main():
