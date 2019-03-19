@@ -513,14 +513,6 @@ async def on_voice_state_update(member, before, after):
     global voice
     global channel
 
-    # ユーザがボイチャに参加してきた場合は無視
-    if before.channel is None:
-        return
-    
-    # ユーザが切断した場合じゃなくても無視
-    if after.channel is not None:
-        return
-
     guild = before.channel.guild # ステータス変更前のサーバを取得
 
     # そのサーバでボイチャに参加してなければ無視
@@ -531,6 +523,14 @@ async def on_voice_state_update(member, before, after):
     if not voice.get(guild.id).channel == before.channel:
         return
 
+    # ユーザがボイチャに参加してきた場合は無視
+    if before.channel is None:
+        return
+    
+    # ステータス変更前と変更後のチャンネルが同じ場合でも無視
+    if after.channel == before.channel:
+        return
+   
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
     # メンバーがbotのみ(喋太郎含む)かどうか判断
