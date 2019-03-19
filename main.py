@@ -204,6 +204,7 @@ async def say_adm(ctx, arg1):
             # ギルド全てのテキストチャンネルのIDと、喋太郎召喚チャンネルのIDを比較
             if txch.id == channel.get(vc.guild.id):
                 await txch.send('[INFO] {}'.format(arg1)) # 入力されたお知らせを通達
+    await ctx.channel.send('送信が完了したで')
 # ここまで
 
 # 喋太郎の発言を止める
