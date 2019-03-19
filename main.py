@@ -35,7 +35,6 @@ sps = ['yukari', 'maki', 'ai', 'kou']
 bot = commands.Bot(command_prefix='?')
 
 # サーバ別に各値を保持
-voice = {} # ボイスチャンネルID
 channel = {} # テキストチャンネルID
 
 @bot.event
@@ -77,7 +76,6 @@ async def help(ctx):
 # summonコマンドの処理
 @bot.command()
 async def summon(ctx):
-    global voice
     global channel
     # global guild_id
     guild_id = ctx.guild.id # サーバIDを取得
@@ -94,13 +92,18 @@ async def summon(ctx):
         prefix = guild_deta.prefix
 
     # 召喚された時、voiceに情報が残っている場合
-    if guild_id in voice:
-        await voice[guild_id].disconnect()
-        del voice[guild_id] 
+    is_dust = False
+    for vc in bot.voice_clients:
+        if vc.guild.id == guild_id:
+            is_dust = True
+            ctrlvc = vc
+    
+    if is_dust == True:
+        await ctrlvc.disconnect()
         del channel[guild_id]
     # 召喚した人がボイスチャンネルにいた場合
-    if not isinstance(vo_ch, type(None)): 
-        voice[guild_id] = await vo_ch.channel.connect()
+    if vo_ch is not None: 
+        await vo_ch.channel.connect()
         channel[guild_id] = ctx.channel.id
         noties = get_notify(ctx)
         await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
@@ -115,15 +118,16 @@ async def summon(ctx):
 @bot.command()
 async def bye(ctx):
     global guild_id
-    global voice
     global channel
     guild_id = ctx.guild.id
     # コマンドが、呼び出したチャンネルで叩かれている場合
     if ctx.channel.id == channel[guild_id]:
         await ctx.channel.send('じゃあの')
-        await voice[guild_id].disconnect() # ボイスチャンネル切断
+        # ボイスチャンネル切断
+        for vc in bot.voice_clients:
+            if vc.id == guild_id:
+                await vc.disconnect()
         # 情報を削除
-        del voice[guild_id] 
         del channel[guild_id]
 
 # speakerコマンドの処理
@@ -205,17 +209,38 @@ async def say_adm(ctx, arg1):
             if txch.id == channel.get(vc.guild.id):
                 await txch.send('[INFO] {}'.format(arg1)) # 入力されたお知らせを通達
     await ctx.channel.send('送信が完了したで')
+
+@bot.command()
+async def vcdel(ctx, arg1):
+    # 管理人からしか受け付けない
+    if ctx.author.id != manager:
+        return
+    global channel
+
+    try:
+        guild_id = int(arg1)
+    except:
+        await ctx.channel.send('引数が整数じゃないで')
+        return
+
+    for vc in bot.voice_clients:
+        if vc.guild.id == guild_id:
+            await vc.disconnect() # ボイスチャンネル切断
+            # 情報を削除
+            del channel[guild_id]
+    
 # ここまで
 
 # 喋太郎の発言を止める
 @bot.command()
 async def stop(ctx):
-    global voice
-    vc = voice[ctx.guild.id]
-    if(vc.is_playing()):
-        vc.stop()
-    else:
-        await ctx.send("なんも言うてへんで")
+    for vc in bot.voice_clients:
+        if vc.guild.id == ctx.guild.id:
+            if(vc.is_playing()):
+                vc.stop()
+            else:
+                await ctx.send("なんも言うてへんで")
+            return
 
 #辞書の操作をするコマンド
 @bot.command()
@@ -392,7 +417,7 @@ async def uranai(ctx):
 async def on_message(message):
     if message.author.bot:
         return
-    global voice
+
     global channel
     
     mess_id = message.author.id # メッセージを送った人のユーザID
@@ -499,29 +524,39 @@ async def on_message(message):
             return
         
         # 音声ファイルを再生中の場合再生終了まで止まる
-        while (voice[guild_id].is_playing()):
+        for vc in bot.voice_clients:
+            if vc.id == guild_id:
+                ctrlvc = vc
+                break
+        
+        while (ctrlvc.is_playing()):
             # 他の処理をさせて1秒待機
             await asyncio.sleep(1)
         # 再生処理
         voice_mess = './cache/{}/{}'.format(str_guild_id, rawfile) # rawファイルのディレクトリ
-        voice[guild_id].play(discord.FFmpegPCMAudio(voice_mess, before_options='-f s16be -ar 16k -ac 1')) # エンコードして音声チャンネルで再生
+        ctrlvc.play(discord.FFmpegPCMAudio(voice_mess, before_options='-f s16be -ar 16k -ac 1')) # エンコードして音声チャンネルで再生
         await asyncio.sleep(0.5)
         os.remove(voice_mess) #rawファイルの削除
 
 # 自動退出をする処理
 @bot.event
 async def on_voice_state_update(member, before, after):
-    global voice
     global channel
 
     guild = before.channel.guild # ステータス変更前のサーバを取得
+    vc_cl = bot.voice_clients
 
     # そのサーバでボイチャに参加してなければ無視
-    if voice.get(guild.id) is None:
+    is_exist = False
+    for vc in vc_cl:
+        if vc.guild == guild:
+            is_exist = True
+            vc_cl = vc
+    if is_exist == False:
         return
 
     # 発生したイベントが、参加してるボイチャと別のボイチャなら無視
-    if not voice.get(guild.id).channel == before.channel:
+    if not vc_cl == before.channel:
         return
 
     # ユーザがボイチャに参加してきた場合は無視
@@ -548,8 +583,7 @@ async def on_voice_state_update(member, before, after):
                 await txch.send('じゃあの')
                 del channel[guild.id]
 
-        await voice[guild.id].disconnect()
-        del voice[guild.id]
+        await before.channel.disconnect()
 
 def add_guild_db(guild):
     str_id = str(guild.id)
