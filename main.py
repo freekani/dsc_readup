@@ -132,7 +132,7 @@ async def suumo(ctx):
     global channel
     guild_id = ctx.guild.id
     mess = 'あ❗️ スーモ❗️🌚ダン💥ダン💥ダン💥シャーン🎶スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚ス〜〜〜モ⤴スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝ス～～～モ⤵🌞'
-    await ctx.channel.send(random.choice(mess))
+    await ctx.channel.send(mess)
 
 # byeコマンドの処理            
 @bot.command()
