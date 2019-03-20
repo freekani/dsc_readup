@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import json
+import random
 import logging
 import psycopg2
 import discord
@@ -114,6 +115,28 @@ async def summon(ctx):
             await ctx.channel.send('喋太郎に何かあれば、だーやまんのお題箱( https://odaibako.net/u/gamerkohei )までお願いします。\r喋太郎の開発、運用等にご協力をお願いします🙌\rhttps://fantia.jp/gamerkohei ')
     else :
         await ctx.channel.send('あんたボイスチャンネルおらへんやんけ！')
+
+# クソコマンド            
+@bot.command()
+async def summou(ctx):
+    global guild_id
+    global channel
+    guild_id = ctx.guild.id
+    mess = ['どすこい', 'ごっちゃんです']
+    # コマンドが、呼び出したチャンネルで叩かれている場合
+    if ctx.channel.id == channel[guild_id]:
+        await ctx.channel.send(random.choice(mess))
+
+# クソコマンド            
+@bot.command()
+async def suumo(ctx):
+    global guild_id
+    global channel
+    guild_id = ctx.guild.id
+    mess = 'あ❗️ スーモ❗️🌚ダン💥ダン💥ダン💥シャーン🎶スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚ス〜〜〜モ⤴スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝ス～～～モ⤵🌞'
+    # コマンドが、呼び出したチャンネルで叩かれている場合
+    if ctx.channel.id == channel[guild_id]:
+        await ctx.channel.send(random.choice(mess))
 
 # byeコマンドの処理            
 @bot.command()
