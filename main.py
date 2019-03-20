@@ -123,9 +123,7 @@ async def summou(ctx):
     global channel
     guild_id = ctx.guild.id
     mess = ['どすこい', 'ごっちゃんです']
-    # コマンドが、呼び出したチャンネルで叩かれている場合
-    if ctx.channel.id == channel[guild_id]:
-        await ctx.channel.send(random.choice(mess))
+    await ctx.channel.send(random.choice(mess))
 
 # クソコマンド            
 @bot.command()
@@ -134,9 +132,7 @@ async def suumo(ctx):
     global channel
     guild_id = ctx.guild.id
     mess = 'あ❗️ スーモ❗️🌚ダン💥ダン💥ダン💥シャーン🎶スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚ス〜〜〜モ⤴スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝ス～～～モ⤵🌞'
-    # コマンドが、呼び出したチャンネルで叩かれている場合
-    if ctx.channel.id == channel[guild_id]:
-        await ctx.channel.send(random.choice(mess))
+    await ctx.channel.send(random.choice(mess))
 
 # byeコマンドの処理            
 @bot.command()
