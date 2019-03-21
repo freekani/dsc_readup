@@ -18,7 +18,7 @@ from fortune import get_predic
 # ログを出力
 logger = logging.getLogger('discord')
 logger.setLevel(logging.WARNING)
-handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.now().strftime('%Y-%m-%d %H:%M')), encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.now().strftime('%Y-%m-%d_%H:%M')), encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
