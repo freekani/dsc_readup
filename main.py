@@ -9,6 +9,7 @@ import psycopg2
 import discord
 import asyncio
 import ctrl_db
+from datetime import datetime
 from discord.ext import commands
 from pydub import AudioSegment
 from voice import knockApi
@@ -17,7 +18,7 @@ from fortune import get_predic
 # ログを出力
 logger = logging.getLogger('discord')
 logger.setLevel(logging.WARNING)
-handler = logging.FileHandler(filename='syabetaro.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.now().strftime('%Y-%m-%d %H:%M')), encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
@@ -494,7 +495,7 @@ async def on_message(message):
             if vc.guild.id == guild_id:
                 ctrlvc = vc
                 break
-                
+
     if ctrlvc is None:
         return
     
@@ -557,11 +558,6 @@ async def on_message(message):
             return
         
         # 音声ファイルを再生中の場合再生終了まで止まる
-        for vc in bot.voice_clients:
-            if vc.guild.id == guild_id:
-                ctrlvc = vc
-                break
-        
         while (ctrlvc.is_playing()):
             # 他の処理をさせて1秒待機
             await asyncio.sleep(1)

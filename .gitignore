@@ -2,7 +2,7 @@ cache/
 sound/
 __pycache__/
 token.json
-.log
+*.log
 .DS_Store
 Pipfile*
 .vscode/
