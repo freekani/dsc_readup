@@ -508,6 +508,12 @@ async def on_message(message):
                     htzt_f = discord.File(f)
                     await message.channel.send(file=htzt_f)
                     return
+        # this is easteregg03
+        if message.content == 'ゆるしてにゃん':
+            path = 'images/yurushite{}.jpg'.format(random.randint(1, 9))
+            if os.path.isfile(path):
+                yurusite_f = open(path, mode='rb')
+                yurushite = discord.File(yurusite_f)
         # URLを、"URL"へ置換
         get_msg = re.sub(r'http(s)?://([\w-]+\.)+[\w-]+(/[-\w ./?%&=]*)?', 'URL', message.content)
         # reactionの置換
@@ -552,6 +558,10 @@ async def on_message(message):
         # 失敗した場合(ログは吐くようにしたい)
         except:
             await message.channel.send('To {} ちょいとエラー起きたみたいや。少し待ってからメッセージ送ってくれな。'.format(message.author.name))
+            try:
+                yurushite_f.close()
+            except NameError:
+                pass
             return
         
         # 音声ファイルを再生中の場合再生終了まで止まる
@@ -561,6 +571,12 @@ async def on_message(message):
         # 再生処理
         voice_mess = './cache/{}/{}'.format(str_guild_id, rawfile) # rawファイルのディレクトリ
         ctrlvc.play(discord.FFmpegPCMAudio(voice_mess, before_options='-f s16be -ar 16k -ac 1')) # エンコードして音声チャンネルで再生
+        
+        try:
+            await message.channel.send(file=yurushite)
+            yurusite_f.close()
+        except NameError:
+            pass
         await asyncio.sleep(0.5)
         os.remove(voice_mess) #rawファイルの削除
 
