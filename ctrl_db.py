@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, orm
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, Date, DateTime, ForeignKey
 import datetime
 import psycopg2
 import json
@@ -66,9 +66,9 @@ class CountRequest(Base):
     count = Column(Integer, default = 0)
 
 class Sessions(Base):
-    __tableneme__ = 'sessions'
+    __tablename__ = 'sessions'
 
-    datetime = Column(Date, primary_key=True)
+    date_time = Column(DateTime, primary_key=True)
     now_sessions = Column(Integer)
     max_sessions = Column(Integer, default = 0)
 
@@ -228,4 +228,19 @@ def set_reqcount(date, time):
     found_rec.count += 1
     session.commit()
 
+def set_session(dt, ss_num):
+    found_data = session.query(Sessions).filter_by(date_time=dt).one_or_none()
 
+    if found_data is None:
+        new_data = Sessions(date_time = dt, now_sessions = ss_num)
+        session.add(new_data)
+        session.commit()
+
+        found_data = session.query(Sessions).filter_by(date_time=dt).one_or_none()
+    
+    found_data.now_sessions = ss_num
+    if found_data.max_sessions < ss_num:
+        found_data.max_sessions = ss_num
+    
+    session.commit()
+    
