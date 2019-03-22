@@ -9,16 +9,17 @@ import psycopg2
 import discord
 import asyncio
 import ctrl_db
-from datetime import datetime
 from discord.ext import commands
 from pydub import AudioSegment
 from voice import knockApi
 from fortune import get_predic
 
 # ログを出力
+if not os.path.isdir('log'):
+    os.makedirs('log')
 logger = logging.getLogger('discord')
 logger.setLevel(logging.WARNING)
-handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.now().strftime('%Y-%m-%d_%H:%M')), encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H:%M')), encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
