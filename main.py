@@ -110,6 +110,7 @@ async def summon(ctx):
         await vo_ch.channel.connect()
         channel[guild_id] = ctx.channel.id
         noties = get_notify(ctx)
+        ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
         await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
         for noty in noties:
             await ctx.channel.send(noty)
@@ -149,6 +150,7 @@ async def bye(ctx):
         for vc in bot.voice_clients:
             if vc.guild.id == guild_id:
                 await vc.disconnect()
+                ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
         # 情報を削除
         if guild_id in channel:
             del channel[guild_id]
@@ -493,7 +495,9 @@ async def on_message(message):
                 ctrlvc = vc
                 break
 
-    if ctrlvc is None:
+    try:
+        ctrlvc
+    except UnboundLocalError:
         return
     
     str_guild_id = str(guild_id)
@@ -627,6 +631,7 @@ async def on_voice_state_update(member, before, after):
                     del channel[guild.id]
 
         await vc_ctl.disconnect()
+        ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
 def add_guild_db(guild):
     str_id = str(guild.id)

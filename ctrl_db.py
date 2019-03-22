@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, orm
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Boolean, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, Date, DateTime, ForeignKey
 import datetime
 import psycopg2
 import json
@@ -64,6 +64,13 @@ class CountRequest(Base):
     date = Column(Date)
     hour = Column(Integer)
     count = Column(Integer, default = 0)
+
+class Sessions(Base):
+    __tablename__ = 'sessions'
+
+    date_time = Column(DateTime, primary_key=True)
+    now_sessions = Column(Integer)
+    max_sessions = Column(Integer, default = 0)
 
 url = 'postgresql+psycopg2://{}:{}@{}/{}'.format(df['db_user'], df['password'], df['host'], df['db_name'])
 engine = create_engine(url)
@@ -221,23 +228,19 @@ def set_reqcount(date, time):
     found_rec.count += 1
     session.commit()
 
-def zero_ini():
-    oldday = datetime.date(2019, 2, 22)
-    nowday = datetime.date.today()
-    
-    for i in date_range(oldday, nowday):
-        get_recs = session.query(CountRequest.hour).filter_by(date = i).all()
-        recs = list()
-        for rec in get_recs:
-            recs.append(rec.hour)
-        zero_cts = list()
-        for k in range(24):
-            if not k in recs:
-                zero_ct = CountRequest(date = i, hour = k)
-                zero_cts.append(zero_ct)
-        session.add_all(zero_cts)
+def set_session(dt, ss_num):
+    found_data = session.query(Sessions).filter_by(date_time=dt).one_or_none()
+
+    if found_data is None:
+        new_data = Sessions(date_time = dt, now_sessions = ss_num)
+        session.add(new_data)
         session.commit()
 
-def date_range(start_date, end_date):
-    diff = (end_date-start_date).days + 1
-    return (start_date + datetime.timedelta(i) for i in range(diff))
+        found_data = session.query(Sessions).filter_by(date_time=dt).one_or_none()
+    
+    found_data.now_sessions = ss_num
+    if found_data.max_sessions < ss_num:
+        found_data.max_sessions = ss_num
+    
+    session.commit()
+    
