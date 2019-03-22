@@ -15,9 +15,11 @@ from voice import knockApi
 from fortune import get_predic
 
 # ログを出力
+if not os.path.isdir('log'):
+    os.makedirs('log')
 logger = logging.getLogger('discord')
 logger.setLevel(logging.WARNING)
-handler = logging.FileHandler(filename='syabetaro.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H:%M')), encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
@@ -485,7 +487,13 @@ async def on_message(message):
         return
 
     # 召喚されていなかった場合
-    if guild_id not in channel:
+    ## VCに接続されているか判断
+    for vc in bot.voice_clients:
+            if vc.guild.id == guild_id:
+                ctrlvc = vc
+                break
+
+    if ctrlvc is None:
         return
     
     str_guild_id = str(guild_id)
@@ -547,11 +555,6 @@ async def on_message(message):
             return
         
         # 音声ファイルを再生中の場合再生終了まで止まる
-        for vc in bot.voice_clients:
-            if vc.guild.id == guild_id:
-                ctrlvc = vc
-                break
-        
         while (ctrlvc.is_playing()):
             # 他の処理をさせて1秒待機
             await asyncio.sleep(1)
