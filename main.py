@@ -487,10 +487,6 @@ async def on_message(message):
         return
 
     # 召喚されていなかった場合
-    '''
-    if guild_id not in channel:
-        return
-    '''
     ## VCに接続されているか判断
     for vc in bot.voice_clients:
             if vc.guild.id == guild_id:
