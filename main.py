@@ -621,8 +621,6 @@ async def on_voice_state_update(member, before, after):
             # テキストチャンネル情報を削除
             del channel[guild.id]
         return
-        
-        
    
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
