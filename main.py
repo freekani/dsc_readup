@@ -103,11 +103,9 @@ async def summon(ctx):
     
     if is_dust == True:
         await ctrlvc.disconnect()
-        if guild_id in channel:
-            del channel[guild_id]
     # 召喚した人がボイスチャンネルにいた場合
     if vo_ch is not None: 
-        await vo_ch.channel.connect()
+        await vo_ch.channel.connect(reconnect=False)
         channel[guild_id] = ctx.channel.id
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
@@ -151,9 +149,6 @@ async def bye(ctx):
             if vc.guild.id == guild_id:
                 await vc.disconnect()
                 ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
-        # 情報を削除
-        if guild_id in channel:
-            del channel[guild_id]
 
 # speakerコマンドの処理
 @bot.command()
@@ -251,9 +246,6 @@ async def vcdel(ctx, arg1):
     for vc in bot.voice_clients:
         if vc.guild.id == guild_id:
             await vc.disconnect() # ボイスチャンネル切断
-            # 情報を削除
-            if guild_id in channel:
-                del channel[guild_id]
             await ctx.channel.send('切断完了')
     
 # ここまで
@@ -612,6 +604,12 @@ async def on_voice_state_update(member, before, after):
     # ステータス変更前と変更後のチャンネルが同じ場合でも無視
     if after.channel == before.channel:
         return
+
+    # bot自身の切断の場合、channel情報を削除する
+    if member == bot.user:
+        # 抜けたチャットのチャット欄にメッセージ送信
+        # テキストチャンネル情報を削除
+        del channel[before.guild.id]
    
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
@@ -627,8 +625,6 @@ async def on_voice_state_update(member, before, after):
         for txch in guild.text_channels:
             if txch.id == channel.get(guild.id):
                 await txch.send('じゃあの')
-                if guild.id in channel:
-                    del channel[guild.id]
 
         await vc_ctl.disconnect()
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
