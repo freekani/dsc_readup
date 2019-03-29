@@ -81,6 +81,7 @@ async def help(ctx):
     embed.add_field(name='{}speed'.format(prefix), value='コマンドの後に0.5~4.0の小数をつけることで、読み上げ速度が変わるで。デフォルトは1.0や。', inline=False)
     embed.add_field(name='{}intone'.format(prefix), value='コマンドの後に0.0~2.0の小数をつけることで、抑揚が変わるで。デフォルトは1.1や。', inline=False)
     embed.add_field(name='{}pitch'.format(prefix), value='コマンドの後に0.0~2.0の小数をつけることで、高さが変わるで。デフォルトは1.2や。', inline=False)
+    embed.add_field(name='{}status'.format(prefix), value='現在の音声設定を表示するで。', inline=False)
     embed.add_field(name='{}uranai'.format(prefix), value='おみくじが引けるで。結果は日替わりや。', inline=False)
 
     await ctx.send(embed=embed)
