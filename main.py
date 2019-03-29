@@ -89,23 +89,24 @@ async def summon(ctx):
 
     # サーバのプレフィックスを取得
     guild_deta = ctrl_db.get_guild(str(guild_id))
-    if isinstance(guild_deta, type(None)):
+    if guild_deta is None:
         prefix = '?'
     else:
         prefix = guild_deta.prefix
 
-    # 召喚された時、voiceに情報が残っている場合
-    is_dust = False
-    for vc in bot.voice_clients:
-        if vc.guild.id == guild_id:
-            is_dust = True
-            ctrlvc = vc
-    
-    if is_dust == True:
-        await ctrlvc.disconnect()
     # 召喚した人がボイスチャンネルにいた場合
     if vo_ch is not None: 
-        await vo_ch.channel.connect(reconnect=False)
+        # 召喚された時、voiceに情報が残っている場合フラグを立てる
+        is_dust = False
+        for vc in bot.voice_clients:
+            if vc.guild.id == guild_id:
+                is_dust = True
+                ctrlvc = vc
+        # ボイスチャンネルにすでにいたならば移動、そうでないなら接続(再接続なし)
+        if is_dust == True:
+            await ctrlvc.move_to(vo_ch.channel)
+        else:
+            await vo_ch.channel.connect(reconnect=False)
         channel[guild_id] = ctx.channel
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
@@ -221,13 +222,6 @@ async def say_adm(ctx, arg1):
             pass
         else:
             await channel.get(vc.guild.id).send('[INFO] {}'.format(arg1))
-        '''
-        # ボイスクライアントがあるサーバのテキストチャンネルを全て取得
-        for txch in vc.guild.text_channels:
-            # ギルド全てのテキストチャンネルのIDと、喋太郎召喚チャンネルのIDを比較
-            if txch.id == channel.get(vc.guild.id):
-                await txch.send('[INFO] {}'.format(arg1)) # 入力されたお知らせを通達
-        '''
     await ctx.channel.send('送信が完了したで')
 
 @bot.command()
@@ -593,6 +587,20 @@ async def on_voice_state_update(member, before, after):
     guild = before.channel.guild # ステータス変更前のサーバを取得
     vc_cl = bot.voice_clients
 
+    # bot自身の切断の場合、channel情報を削除する
+    if member == bot.user:
+        # 移動後のボイスチャンネルがない場合
+        if after.channel is None:
+            # テキストチャットが保存されているか判別
+            if channel.get(guild.id) is None:
+                pass
+            else:
+                # 抜けたチャットのチャット欄にメッセージ送信
+                await channel.get(guild.id).send('じゃあの')
+                # テキストチャンネル情報を削除
+                del channel[guild.id]
+            return
+
     # そのサーバでボイチャに参加してなければ無視
     is_exist = False
     for vc in vc_cl:
@@ -609,18 +617,6 @@ async def on_voice_state_update(member, before, after):
     # ステータス変更前と変更後のチャンネルが同じ場合でも無視
     if after.channel == before.channel:
         return
-
-    # bot自身の切断の場合、channel情報を削除する
-    if member == bot.user:
-        # テキストチャットが保存されているか判別
-        if channel.get(guild.id) is None:
-            pass
-        else:
-            # 抜けたチャットのチャット欄にメッセージ送信
-            await channel.get(guild.id).send('じゃあの')
-            # テキストチャンネル情報を削除
-            del channel[guild.id]
-        return
    
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
@@ -635,6 +631,16 @@ async def on_voice_state_update(member, before, after):
     if is_only_bot == True:
         await vc_ctl.disconnect()
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
+
+# サーバからキックやBanされた時とか
+@bot.event
+async def on_guild_remove(guild):
+    global channel
+    for vc in bot.voice_clients:
+        if vc.guild == guild:
+            if channel.get(guild.id) is not None:
+                del channel[guild.id]
+            vc.disconnect()
 
 def add_guild_db(guild):
     str_id = str(guild.id)
