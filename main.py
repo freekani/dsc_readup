@@ -195,6 +195,13 @@ async def spk(ctx, arg1='emp'):
             spk = spk_to_char(u_st.speaker)
             await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format(ctx.author.mention, spk, u_st.pitch, u_st.speed, u_st.r_range))
 
+# ボイスステータスの表示
+@bot.command()
+async def status(ctx):
+    u_st = ctrl_db.get_user(str(ctx.author.id))
+    spk = spk_to_char(u_st.speaker)
+    await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format(ctx.author.mention, spk, u_st.pitch, u_st.speed, u_st.r_range))
+
 @bot.command()
 async def set_prefix(ctx, arg1):
     # prefixの設定
