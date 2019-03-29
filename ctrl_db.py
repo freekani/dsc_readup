@@ -118,6 +118,12 @@ def set_prefix(guild_id, prefix):
 
     session.commit()
 
+def set_guild_name(guild_id, guild_name):
+    guild = session.query(Guild).filter_by(id=guild_id).one()
+    guild.name = guild_name
+
+    session.commit()
+
 def get_guild(guild_id):
     guilds = session.query(Guild).filter_by(id=guild_id).one_or_none()
 

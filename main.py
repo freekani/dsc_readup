@@ -45,7 +45,13 @@ channel = {} # テキストチャンネルID
 async def on_ready():
     print('Logged in as')
     print(bot.user.name)
-    print(bot.user.id)
+    print('Guild Nameの初期化開始')
+    for guild in bot.guilds:
+        old_guild = ctrl_db.get_guild(guild.id)
+        if guild.name != old_guild.name:
+            ctrl_db.set_guild_name(guild.id, guild.name)
+    print('完了')
+    bot.activity.name = '{}サーバに接続中'.format(len(bot.voice_clients))
     print('------')
 
 # 標準のhelpコマンドを無効化
@@ -111,6 +117,7 @@ async def summon(ctx):
         channel[guild_id] = ctx.channel.id
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
+        bot.activity.name = '{}サーバに接続中'.format(len(bot.voice_clients))
         await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
         for noty in noties:
             await ctx.channel.send(noty)
@@ -204,6 +211,8 @@ async def spk(ctx, arg1='emp'):
 async def set_prefix(ctx, arg1):
     # prefixの設定
     guild_id = str(ctx.guild.id)
+    # サーバの登録
+    add_guild_db(ctx.guild)
 
     ctrl_db.set_prefix(guild_id, arg1)
     await ctx.send('prefixを{}に変更したで。'.format(arg1))
@@ -633,13 +642,19 @@ async def on_voice_state_update(member, before, after):
         await vc_ctl.disconnect()
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
+# サーバの名前が変わった時
+@bot.event
+async def on_guild_update(before, after):
+    if before.name != after.name:
+        ctrl_db.set_guild_name(str(after.id), after.name)
+
 def add_guild_db(guild):
     str_id = str(guild.id)
     guilds = ctrl_db.get_guild(str_id)
     # デフォルトのprefixは'?'
     prefix = '?'
 
-    if isinstance(guilds, type(None)):
+    if guilds is None:
         ctrl_db.add_guild(str_id, guild.name, prefix)
 
 def get_notify(ctx):
