@@ -47,11 +47,14 @@ async def on_ready():
     print(bot.user.name)
     print('Guild Nameの初期化開始')
     for guild in bot.guilds:
-        old_guild = ctrl_db.get_guild(guild.id)
+        old_guild = ctrl_db.get_guild(str(guild.id))
+        if old_guild is None:
+            continue
         if guild.name != old_guild.name:
-            ctrl_db.set_guild_name(guild.id, guild.name)
+            ctrl_db.set_guild_name(str(guild.id), guild.name)
     print('完了')
-    bot.activity.name = '{}サーバに接続中'.format(len(bot.voice_clients))
+    activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+    await bot.change_presence(activity=activ)
     print('------')
 
 # 標準のhelpコマンドを無効化
@@ -116,7 +119,8 @@ async def summon(ctx):
         channel[guild_id] = ctx.channel
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
-        bot.activity.name = '{}サーバに接続中'.format(len(bot.voice_clients))
+        activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+        await bot.change_presence(activity=activ)
         await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
         for noty in noties:
             await ctx.channel.send(noty)
@@ -606,7 +610,8 @@ async def on_voice_state_update(member, before, after):
             else:
                 # 抜けたチャットのチャット欄にメッセージ送信
                 await channel.get(guild.id).send('じゃあの')
-                bot.activity.name = '{}サーバに接続中'.format(len(bot.voice_clients))
+                activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+                await bot.change_presence(activity=activ)
                 # テキストチャンネル情報を削除
                 del channel[guild.id]
             return
