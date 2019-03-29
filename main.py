@@ -187,18 +187,14 @@ async def spk(ctx, arg1='emp'):
                 # 引き数のキャラが存在しない場合
                 await ctx.channel.send('おっと、そのキャラは未実装だ。すまねえ。')
                 return
-            elif cand == 'yukari':
-                # ゆかりの場合
-                cand = 'sumire'
-            elif cand == 'ai':
-                # アイの場合
-                cand = 'anzu'
-            elif cand == 'kou':
-                # コウの場合
-                cand = 'osamu'
+            else:
+                cand = char_to_spk(cand)
 
             # 話者を設定
             ctrl_db.set_user(str(ctx.author.id), cand)
+            u_st = ctrl_db.get_user(str(ctx.author.id))
+            spk = spk_to_char(u_st.speaker)
+            await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format(ctx.author.mention, spk, u_st.pitch, u_st.speed, u_st.r_range))
 
 @bot.command()
 async def set_prefix(ctx, arg1):
@@ -372,7 +368,9 @@ async def speed(ctx, arg1='emp'):
     if speed >= 0.5 and speed <= 4.0:
         try:
             ctrl_db.set_readspeed(speed, struid)
-            await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format())
+            u_st = ctrl_db.get_user(str(ctx.author.id))
+            spk = spk_to_char(u_st.speaker)
+            await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format(ctx.author.mention, spk, u_st.pitch, u_st.speed, u_st.r_range))
         except:
             await ctx.send('すまん、登録失敗したわ。')
     else:
@@ -403,6 +401,9 @@ async def intone(ctx, arg1='emp'):
 
     if r_range >= 0.0 and r_range <= 2.0:
         ctrl_db.set_readrange(r_range, struid)
+        u_st = ctrl_db.get_user(str(ctx.author.id))
+        spk = spk_to_char(u_st.speaker)
+        await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format(ctx.author.mention, spk, u_st.pitch, u_st.speed, u_st.r_range))
     else:
         await ctx.send('数値が正しくないで。0.0~2.0を指定してくれな。デフォルトは1.1や。')
 
@@ -431,6 +432,9 @@ async def pitch(ctx, arg1='emp'):
 
     if pitch >= 0.0 and pitch <= 2.0:
         ctrl_db.set_readpitch(pitch, struid)
+        u_st = ctrl_db.get_user(str(ctx.author.id))
+        spk = spk_to_char(u_st.speaker)
+        await ctx.send('{}のステータス　話者:{} 高さ:{} 速度:{} 抑揚:{}'.format(ctx.author.mention, spk, u_st.pitch, u_st.speed, u_st.r_range))
     else:
         await ctx.send('数値が正しくないで。0.0~2.0を指定してくれな。デフォルトは1.2や。')
 
@@ -696,5 +700,29 @@ def get_notify(ctx):
             ctrl_db.add_notify(new.id, str_id)
     
     return list_noty
+
+def char_to_spk(cand):
+    if cand == 'yukari':
+        # ゆかりの場合
+        cand = 'sumire'
+    elif cand == 'ai':
+        # アイの場合
+        cand = 'anzu'
+    elif cand == 'kou':
+        # コウの場合
+        cand = 'osamu'
+    return cand
+
+def spk_to_char(cand):
+    if cand == 'sumire':
+        # ゆかりの場合
+        cand = 'yukari'
+    elif cand == 'anzu':
+        # アイの場合
+        cand = 'ai'
+    elif cand == 'osamu':
+        # コウの場合
+        cand = 'kou'
+    return cand
 
 bot.run(token)
