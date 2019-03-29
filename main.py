@@ -148,7 +148,6 @@ async def bye(ctx):
     guild_id = ctx.guild.id
     # コマンドが、呼び出したチャンネルで叩かれている場合
     if ctx.channel == channel.get(guild_id):
-        await ctx.channel.send('じゃあの')
         # ボイスチャンネル切断
         for vc in bot.voice_clients:
             if vc.guild.id == guild_id:
@@ -600,7 +599,7 @@ async def on_message(message):
         await asyncio.sleep(0.5)
         os.remove(voice_mess) #rawファイルの削除
 
-# 自動退出をする処理
+# 退出に関するイベント
 @bot.event
 async def on_voice_state_update(member, before, after):
     global channel
