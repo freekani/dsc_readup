@@ -320,6 +320,21 @@ async def wbook(ctx, arg1='emp', arg2='emp', arg3='emp'):
                 await ctx.send('その番号の単語は登録されてないで。')
         else:
             await ctx.send('使い方が正しくないで。{}wbook helpを見てみ。'.format(prefix))
+    elif arg1 == 'alldel':
+        try:
+            ctrl_db.del_all_dict(str_id)
+            await ctx.send('全削除に成功したで。')
+        except:
+            await ctx.send('全削除に失敗したわ。すまんやで。')
+    elif arg1 == 'search':
+        if arg2 == 'emp':
+            await ctx.send('引数が不足してるで。{}wbook helpを見てみ。'.format(prefix))
+        else:
+            result = ctrl_db.search_dict(str_id, arg2)
+            if result is None:
+                await ctx.send('見つからへんかったわ。すまんな。')
+            else:
+                await ctx.send('{}を{}と読むで。辞書番号は{}や。'.format(result.word, result.read, result.id))
     else:
         await ctx.send('使い方が正しくないで。{}wbook helpを見てみ。'.format(prefix))
 
