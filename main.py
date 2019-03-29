@@ -45,7 +45,16 @@ channel = {} # テキストチャンネルID
 async def on_ready():
     print('Logged in as')
     print(bot.user.name)
-    print(bot.user.id)
+    print('Guild Nameの初期化開始')
+    for guild in bot.guilds:
+        old_guild = ctrl_db.get_guild(str(guild.id))
+        if old_guild is None:
+            continue
+        if guild.name != old_guild.name:
+            ctrl_db.set_guild_name(str(guild.id), guild.name)
+    print('完了')
+    activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+    await bot.change_presence(activity=activ)
     print('------')
 
 # 標準のhelpコマンドを無効化
@@ -110,6 +119,8 @@ async def summon(ctx):
         channel[guild_id] = ctx.channel
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
+        activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+        await bot.change_presence(activity=activ)
         await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
         for noty in noties:
             await ctx.channel.send(noty)
@@ -193,6 +204,8 @@ async def spk(ctx, arg1='emp'):
 async def set_prefix(ctx, arg1):
     # prefixの設定
     guild_id = str(ctx.guild.id)
+    # サーバの登録
+    add_guild_db(ctx.guild)
 
     ctrl_db.set_prefix(guild_id, arg1)
     await ctx.send('prefixを{}に変更したで。'.format(arg1))
@@ -597,6 +610,8 @@ async def on_voice_state_update(member, before, after):
             else:
                 # 抜けたチャットのチャット欄にメッセージ送信
                 await channel.get(guild.id).send('じゃあの')
+                activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+                await bot.change_presence(activity=activ)
                 # テキストチャンネル情報を削除
                 del channel[guild.id]
             return
@@ -632,6 +647,12 @@ async def on_voice_state_update(member, before, after):
         await vc_ctl.disconnect()
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
+# サーバの名前が変わった時
+@bot.event
+async def on_guild_update(before, after):
+    if before.name != after.name:
+        ctrl_db.set_guild_name(str(after.id), after.name)
+
 # サーバからキックやBanされた時とか
 @bot.event
 async def on_guild_remove(guild):
@@ -648,7 +669,7 @@ def add_guild_db(guild):
     # デフォルトのprefixは'?'
     prefix = '?'
 
-    if isinstance(guilds, type(None)):
+    if guilds is None:
         ctrl_db.add_guild(str_id, guild.name, prefix)
 
 def get_notify(ctx):
