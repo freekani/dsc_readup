@@ -286,7 +286,9 @@ async def wbook(ctx, arg1='emp', arg2='emp', arg3='emp'):
         embed = discord.Embed(title='{}wbook'.format(prefix), description='辞書を操作するコマンド。データはサーバ毎に分けられてるから安心してな。')
         embed.add_field(name='{}wbook add 単語 よみがな'.format(prefix), value='読み上げ文にこの単語があった場合、よみがなの通りに読み変えるで。\r例:{}wbook add 男の娘 おとこのこ'.format(prefix), inline=False)
         embed.add_field(name='{}wbook list'.format(prefix), value='登録した単語の一覧を表示するで。', inline=False)
+        embed.add_field(name='{}wbook search 単語'.format(prefix), value='単語を検索し、読み仮名と辞書番号を表示するで。そこになければないですね。', inline=False)
         embed.add_field(name='{}wbook delete 番号'.format(prefix), value='listで表示された辞書番号の単語を削除するで', inline=False)
+        embed.add_field(name='{}wbook alldel'.format(prefix), value='辞書を全削除するで。復元できないから注意やぞ。', inline=False)
 
         await ctx.send(embed=embed)
 
@@ -326,6 +328,21 @@ async def wbook(ctx, arg1='emp', arg2='emp', arg3='emp'):
                 await ctx.send('その番号の単語は登録されてないで。')
         else:
             await ctx.send('使い方が正しくないで。{}wbook helpを見てみ。'.format(prefix))
+    elif arg1 == 'alldel':
+        try:
+            ctrl_db.del_all_dict(str_id)
+            await ctx.send('全削除に成功したで。')
+        except:
+            await ctx.send('全削除に失敗したわ。すまんやで。')
+    elif arg1 == 'search':
+        if arg2 == 'emp':
+            await ctx.send('引数が不足してるで。{}wbook helpを見てみ。'.format(prefix))
+        else:
+            result = ctrl_db.search_dict(str_id, arg2)
+            if result is None:
+                await ctx.send('見つからへんかったわ。すまんな。')
+            else:
+                await ctx.send('{}を{}と読むで。辞書番号は{}や。'.format(result.word, result.read, result.id))
     else:
         await ctx.send('使い方が正しくないで。{}wbook helpを見てみ。'.format(prefix))
 

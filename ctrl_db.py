@@ -173,9 +173,17 @@ def del_dict(id, str_id):
         return None
     else:
         session.delete(found_dict)
-
         session.commit()
         return True
+
+def search_dict(str_id, word):
+    found_dict = session.query(Dictionaly).filter_by(word=word, server_id=str_id).one_or_none()
+
+    return found_dict
+
+def del_all_dict(str_id):
+    session.query(Dictionaly).filter_by(server_id=str_id).delete()
+    session.commit()
 
 def set_nameread(is_read, guild_id):
     found_guild = session.query(Guild).filter_by(id=guild_id).one_or_none()
