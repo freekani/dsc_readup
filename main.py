@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import json
+import random
 import logging
 import psycopg2
 import discord
@@ -14,9 +15,11 @@ from voice import knockApi
 from fortune import get_predic
 
 # ログを出力
+if not os.path.isdir('log'):
+    os.makedirs('log')
 logger = logging.getLogger('discord')
 logger.setLevel(logging.WARNING)
-handler = logging.FileHandler(filename='syabetaro.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='log/syabetaro{}.log'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H:%M')), encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
@@ -35,7 +38,6 @@ sps = ['yukari', 'maki', 'ai', 'kou']
 bot = commands.Bot(command_prefix='?')
 
 # サーバ別に各値を保持
-voice = {} # ボイスチャンネルID
 channel = {} # テキストチャンネルID
 
 @bot.event
@@ -43,7 +45,16 @@ channel = {} # テキストチャンネルID
 async def on_ready():
     print('Logged in as')
     print(bot.user.name)
-    print(bot.user.id)
+    print('Guild Nameの初期化開始')
+    for guild in bot.guilds:
+        old_guild = ctrl_db.get_guild(str(guild.id))
+        if old_guild is None:
+            continue
+        if guild.name != old_guild.name:
+            ctrl_db.set_guild_name(str(guild.id), guild.name)
+    print('完了')
+    activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+    await bot.change_presence(activity=activ)
     print('------')
 
 # 標準のhelpコマンドを無効化
@@ -77,7 +88,6 @@ async def help(ctx):
 # summonコマンドの処理
 @bot.command()
 async def summon(ctx):
-    global voice
     global channel
     # global guild_id
     guild_id = ctx.guild.id # サーバIDを取得
@@ -88,21 +98,29 @@ async def summon(ctx):
 
     # サーバのプレフィックスを取得
     guild_deta = ctrl_db.get_guild(str(guild_id))
-    if isinstance(guild_deta, type(None)):
+    if guild_deta is None:
         prefix = '?'
     else:
         prefix = guild_deta.prefix
 
-    # 召喚された時、voiceに情報が残っている場合
-    if guild_id in voice:
-        await voice[guild_id].disconnect()
-        del voice[guild_id] 
-        del channel[guild_id]
     # 召喚した人がボイスチャンネルにいた場合
-    if not isinstance(vo_ch, type(None)): 
-        voice[guild_id] = await vo_ch.channel.connect()
-        channel[guild_id] = ctx.channel.id
+    if vo_ch is not None: 
+        # 召喚された時、voiceに情報が残っている場合フラグを立てる
+        is_dust = False
+        for vc in bot.voice_clients:
+            if vc.guild.id == guild_id:
+                is_dust = True
+                ctrlvc = vc
+        # ボイスチャンネルにすでにいたならば移動、そうでないなら接続(再接続なし)
+        if is_dust == True:
+            await ctrlvc.move_to(vo_ch.channel)
+        else:
+            await vo_ch.channel.connect(reconnect=False)
+        channel[guild_id] = ctx.channel
         noties = get_notify(ctx)
+        ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
+        activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+        await bot.change_presence(activity=activ)
         await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
         for noty in noties:
             await ctx.channel.send(noty)
@@ -111,20 +129,31 @@ async def summon(ctx):
     else :
         await ctx.channel.send('あんたボイスチャンネルおらへんやんけ！')
 
+# クソコマンド            
+@bot.command()
+async def summou(ctx):
+    mess = ['どすこい', 'ごっちゃんです']
+    await ctx.channel.send(random.choice(mess))
+
+# クソコマンド            
+@bot.command()
+async def suumo(ctx):
+    mess = 'あ❗️ スーモ❗️🌚ダン💥ダン💥ダン💥シャーン🎶スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚ス〜〜〜モ⤴スモ🌚スモ🌝スモ🌚スモ🌝スモ🌚スモ🌝ス～～～モ⤵🌞'
+    await ctx.channel.send(mess)
+
 # byeコマンドの処理            
 @bot.command()
 async def bye(ctx):
-    global guild_id
-    global voice
     global channel
     guild_id = ctx.guild.id
     # コマンドが、呼び出したチャンネルで叩かれている場合
-    if ctx.channel.id == channel[guild_id]:
+    if ctx.channel == channel.get(guild_id):
         await ctx.channel.send('じゃあの')
-        await voice[guild_id].disconnect() # ボイスチャンネル切断
-        # 情報を削除
-        del voice[guild_id] 
-        del channel[guild_id]
+        # ボイスチャンネル切断
+        for vc in bot.voice_clients:
+            if vc.guild.id == guild_id:
+                await vc.disconnect()
+                ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
 # speakerコマンドの処理
 @bot.command()
@@ -153,7 +182,7 @@ async def spk(ctx, arg1='emp'):
         await ctx.send(embed=embed)
     else:
         # 呼び出したチャンネルでコマンドが叩かれた場合
-        if ctx.channel.id == channel[guild_id]:
+        if ctx.channel == channel.get(guild_id):
             if cand not in sps:
                 # 引き数のキャラが存在しない場合
                 await ctx.channel.send('おっと、そのキャラは未実装だ。すまねえ。')
@@ -175,6 +204,8 @@ async def spk(ctx, arg1='emp'):
 async def set_prefix(ctx, arg1):
     # prefixの設定
     guild_id = str(ctx.guild.id)
+    # サーバの登録
+    add_guild_db(ctx.guild)
 
     ctrl_db.set_prefix(guild_id, arg1)
     await ctx.send('prefixを{}に変更したで。'.format(arg1))
@@ -199,28 +230,50 @@ async def say_adm(ctx, arg1):
         # テキストチャンネルが登録されてなければそのサーバは無視
         if not vc.guild.id in channel:
             continue
-        # ボイスクライアントがあるサーバのテキストチャンネルを全て取得
-        for txch in vc.guild.text_channels:
-            # ギルド全てのテキストチャンネルのIDと、喋太郎召喚チャンネルのIDを比較
-            if txch.id == channel.get(vc.guild.id):
-                await txch.send('[INFO] {}'.format(arg1)) # 入力されたお知らせを通達
+        # そのサーバのテキストチャンネルが登録されていればお知らせを送信
+        if channel.get(vc.guild.id) is None:
+            pass
+        else:
+            await channel.get(vc.guild.id).send('[INFO] {}'.format(arg1))
+    await ctx.channel.send('送信が完了したで')
+
+@bot.command()
+async def vcdel(ctx, arg1):
+    # 管理人からしか受け付けない
+    if ctx.author.id != manager:
+        return
+    global channel
+
+    try:
+        guild_id = int(arg1)
+    except:
+        await ctx.channel.send('引数が整数じゃないで')
+        return
+
+    for vc in bot.voice_clients:
+        if vc.guild.id == guild_id:
+            await vc.disconnect() # ボイスチャンネル切断
+            await ctx.channel.send('切断完了')
+    
 # ここまで
 
 # 喋太郎の発言を止める
 @bot.command()
 async def stop(ctx):
-    global voice
-    vc = voice[ctx.guild.id]
-    if(vc.is_playing()):
-        vc.stop()
-    else:
-        await ctx.send("なんも言うてへんで")
+    for vc in bot.voice_clients:
+        if vc.guild.id == ctx.guild.id:
+            if(vc.is_playing()):
+                vc.stop()
+            else:
+                await ctx.send("なんも言うてへんで")
+            return
 
 #辞書の操作をするコマンド
 @bot.command()
 async def wbook(ctx, arg1='emp', arg2='emp', arg3='emp'):
     guild_id = ctx.guild.id
     str_id = str(guild_id)
+    # プレフィックスの取得
     guild_deta = ctrl_db.get_guild(str_id)
     if isinstance(guild_deta, type(None)):
         prefix = '?'
@@ -297,6 +350,7 @@ async def readname(ctx, arg1='emp'):
 async def speed(ctx, arg1='emp'):
     guild_id = ctx.guild.id
     str_id = str(guild_id)
+    # プレフィックスを取得
     guild_deta = ctrl_db.get_guild(str_id)
     if isinstance(guild_deta, type(None)):
         prefix = '?'
@@ -328,6 +382,7 @@ async def speed(ctx, arg1='emp'):
 async def intone(ctx, arg1='emp'):
     guild_id = ctx.guild.id
     str_id = str(guild_id)
+    # プレフィックスを取得
     guild_deta = ctrl_db.get_guild(str_id)
     if isinstance(guild_deta, type(None)):
         prefix = '?'
@@ -355,6 +410,7 @@ async def intone(ctx, arg1='emp'):
 async def pitch(ctx, arg1='emp'):
     guild_id = ctx.guild.id
     str_id = str(guild_id)
+    # プレフィックスを取得
     guild_deta = ctrl_db.get_guild(str_id)
     if isinstance(guild_deta, type(None)):
         prefix = '?'
@@ -397,15 +453,16 @@ async def uranai(ctx):
 # メッセージを受信した時の処理
 @bot.event
 async def on_message(message):
+    # botは読み上げない
     if message.author.bot:
         return
-    global voice
+
     global channel
     
     mess_id = message.author.id # メッセージを送った人のユーザID
 
     # ギルドIDがない場合、DMと判断する
-    if isinstance(message.guild, type(None)):
+    if message.guild is None:
         # 管理人からのDMだった場合
         if message.author.id == manager:
             #コマンド操作になっているか
@@ -417,21 +474,21 @@ async def on_message(message):
                 await message.channel.send('コマンド操作をしてくれ')
                 return
         else:
-            await message.channel.send('喋太郎に何かあれば、だーやまんのお題箱( https://odaibako.net/u/gamerkohei )までお願いします。')
+            await message.channel.send('喋太郎に何かあれば、だーやまん( https://twitter.com/gamerkohei )までリプライかDMをお願いします。')
             return
 
     guild_id = message.guild.id # サーバID
 
     # ユーザ情報(speaker)を取得
     user = ctrl_db.get_user(str(mess_id))
-    if isinstance(user, type(None)):
+    if user is None:
         # ユーザ情報がなければ、dbへ登録。話者はsumire
         ctrl_db.add_user(str(mess_id), message.author.name, 'sumire')
         user = ctrl_db.get_user(str(mess_id))
 
     # サーバのプレフィックスを取得
     guild_deta = ctrl_db.get_guild(str(guild_id))
-    if isinstance(guild_deta, type(None)):
+    if guild_deta is None:
         prefix = '?'
     else:
         prefix = guild_deta.prefix
@@ -444,13 +501,35 @@ async def on_message(message):
         return
 
     # 召喚されていなかった場合
-    if guild_id not in channel:
+    ## VCに接続されているか判断
+    for vc in bot.voice_clients:
+            if vc.guild.id == guild_id:
+                ctrlvc = vc
+                break
+
+    try:
+        ctrlvc
+    except UnboundLocalError:
         return
     
     str_guild_id = str(guild_id)
 
     # メッセージを、呼び出されたチャンネルで受信した場合
-    if message.channel.id == channel[guild_id]:
+    if message.channel == channel.get(guild_id):
+        # this is easteregg01
+        if message.content == 'はつざつ「屈辱だ…。」':
+            path = 'images/kutsujoku.jpg'
+            if os.path.isfile(path):
+                with open(path, mode='rb') as f:
+                    htzt_f = discord.File(f)
+                    await message.channel.send(file=htzt_f)
+                    return
+        # this is easteregg03
+        if message.content == 'ゆるしてにゃん':
+            path = 'images/yurushite{}.jpg'.format(random.randint(1, 9))
+            if os.path.isfile(path):
+                yurusite_f = open(path, mode='rb')
+                yurushite = discord.File(yurusite_f)
         # URLを、"URL"へ置換
         get_msg = re.sub(r'http(s)?://([\w-]+\.)+[\w-]+(/[-\w ./?%&=]*)?', 'URL', message.content)
         # reactionの置換
@@ -495,42 +574,73 @@ async def on_message(message):
         # 失敗した場合(ログは吐くようにしたい)
         except:
             await message.channel.send('To {} ちょいとエラー起きたみたいや。少し待ってからメッセージ送ってくれな。'.format(message.author.name))
+            try:
+                yurushite_f.close()
+            except NameError:
+                pass
             return
         
         # 音声ファイルを再生中の場合再生終了まで止まる
-        while (voice[guild_id].is_playing()):
+        while (ctrlvc.is_playing()):
             # 他の処理をさせて1秒待機
             await asyncio.sleep(1)
         # 再生処理
         voice_mess = './cache/{}/{}'.format(str_guild_id, rawfile) # rawファイルのディレクトリ
-        voice[guild_id].play(discord.FFmpegPCMAudio(voice_mess, before_options='-f s16be -ar 16k -ac 1')) # エンコードして音声チャンネルで再生
+        ctrlvc.play(discord.FFmpegPCMAudio(voice_mess, before_options='-f s16be -ar 16k -ac 1')) # エンコードして音声チャンネルで再生
+        
+        try:
+            await message.channel.send(file=yurushite)
+            yurusite_f.close()
+        except NameError:
+            pass
         await asyncio.sleep(0.5)
         os.remove(voice_mess) #rawファイルの削除
 
 # 自動退出をする処理
 @bot.event
 async def on_voice_state_update(member, before, after):
-    global voice
     global channel
 
     # ユーザがボイチャに参加してきた場合は無視
     if before.channel is None:
         return
-    
-    # ユーザが切断した場合じゃなくても無視
-    if after.channel is not None:
-        return
 
     guild = before.channel.guild # ステータス変更前のサーバを取得
+    vc_cl = bot.voice_clients
+
+    # bot自身の切断の場合、channel情報を削除する
+    if member == bot.user:
+        # 移動後のボイスチャンネルがない場合
+        if after.channel is None:
+            # テキストチャットが保存されているか判別
+            if channel.get(guild.id) is None:
+                pass
+            else:
+                # 抜けたチャットのチャット欄にメッセージ送信
+                await channel.get(guild.id).send('じゃあの')
+                activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
+                await bot.change_presence(activity=activ)
+                # テキストチャンネル情報を削除
+                del channel[guild.id]
+            return
 
     # そのサーバでボイチャに参加してなければ無視
-    if voice.get(guild.id) is None:
+    is_exist = False
+    for vc in vc_cl:
+        if vc.guild == guild:
+            is_exist = True
+            vc_ctl = vc
+    if is_exist == False:
         return
 
     # 発生したイベントが、参加してるボイチャと別のボイチャなら無視
-    if not voice.get(guild.id).channel == before.channel:
+    if not vc_ctl.channel == before.channel:
         return
-
+    
+    # ステータス変更前と変更後のチャンネルが同じ場合でも無視
+    if after.channel == before.channel:
+        return
+   
     vc_members = before.channel.members # ボイチャにいたメンバーを取得
     
     # メンバーがbotのみ(喋太郎含む)かどうか判断
@@ -542,13 +652,24 @@ async def on_voice_state_update(member, before, after):
 
     # botだけ残った場合、切断
     if is_only_bot == True:
-        for txch in guild.text_channels:
-            if txch.id == channel.get(guild.id):
-                await txch.send('じゃあの')
-                del channel[guild.id]
+        await vc_ctl.disconnect()
+        ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
-        await voice[guild.id].disconnect()
-        del voice[guild.id]
+# サーバの名前が変わった時
+@bot.event
+async def on_guild_update(before, after):
+    if before.name != after.name:
+        ctrl_db.set_guild_name(str(after.id), after.name)
+
+# サーバからキックやBanされた時とか
+@bot.event
+async def on_guild_remove(guild):
+    global channel
+    for vc in bot.voice_clients:
+        if vc.guild == guild:
+            if channel.get(guild.id) is not None:
+                del channel[guild.id]
+            vc.disconnect()
 
 def add_guild_db(guild):
     str_id = str(guild.id)
@@ -556,7 +677,7 @@ def add_guild_db(guild):
     # デフォルトのprefixは'?'
     prefix = '?'
 
-    if isinstance(guilds, type(None)):
+    if guilds is None:
         ctrl_db.add_guild(str_id, guild.name, prefix)
 
 def get_notify(ctx):
