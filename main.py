@@ -152,7 +152,7 @@ async def bye(ctx):
         # ボイスチャンネル切断
         for vc in bot.voice_clients:
             if vc.guild.id == guild_id:
-                await vc.disconnect()
+                await vc.disconnect(force=True)
                 ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
 # speakerコマンドの処理
