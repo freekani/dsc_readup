@@ -1,7 +1,7 @@
 喋太郎
 ====
 
-Overview  
+## Overview  
 これは、DiscordのTTS Botです。
 
 ## Description
@@ -32,7 +32,7 @@ Discordアプリケーションに組み込みであるTTS機能と違い、ボ�
 
 ## Usage
 招待URLから、管理しているサーバへ正体してください。  
-その後の使い方は、以下の記事に書いてあります。　　
+その後の使い方は、以下の記事に書いてあります。  
 http://nonbiriyanonikki.hatenablog.com/entry/2019/02/09/122844
 
 ## Install
@@ -44,11 +44,13 @@ $ pip install -r requrire.txt
 次に、postgresqlでデータベースを作成しておきます。  
 次に、`token.json.example`を`token.json`にリネームします。内容を以下で指定したように適宜書き換えてください。
 ```
-"docomo":"docomo Deveroper TOKEN", 
+"docomo":"docomo Deveroper TOKEN",
 "bot":"BOT TOKEN",
-"manager_id":"BOT MANAGER DISCORD ID", #Bot管理人のDiscord ID
-"db_user":"taro", # データベースのユーザ
-"db_name":"taro_dsc" # データベースの名前
+"manager_id":"BOT MANAGER DISCORD ID",
+"db_user":"taro", #dbのユーザネーム
+"password":"password", #dbのパスワード
+"host":"localhost", #dbのアドレス
+"db_name":"taro_dsc" #dbの名前
 ```
 設定が終わったら、
 ```
