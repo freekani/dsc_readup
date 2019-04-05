@@ -116,7 +116,7 @@ async def summon(ctx):
         if is_dust == True:
             await ctrlvc.move_to(vo_ch.channel)
         else:
-            await vo_ch.channel.connect(timeout=0.0, reconnect=False)
+            await vo_ch.channel.connect(timeout=10.0, reconnect=False)
         channel[guild_id] = ctx.channel
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
