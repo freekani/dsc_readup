@@ -116,7 +116,7 @@ async def summon(ctx):
         if is_dust == True:
             await ctrlvc.move_to(vo_ch.channel)
         else:
-            await vo_ch.channel.connect(reconnect=False)
+            await vo_ch.channel.connect(timeout=10.0, reconnect=False)
         channel[guild_id] = ctx.channel
         noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
@@ -152,7 +152,7 @@ async def bye(ctx):
         # ボイスチャンネル切断
         for vc in bot.voice_clients:
             if vc.guild.id == guild_id:
-                await vc.disconnect()
+                await vc.disconnect(force=True)
                 ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
 # speakerコマンドの処理
@@ -255,7 +255,7 @@ async def vcdel(ctx, arg1):
 
     for vc in bot.voice_clients:
         if vc.guild.id == guild_id:
-            await vc.disconnect() # ボイスチャンネル切断
+            await vc.disconnect(force=True) # ボイスチャンネル切断
             await ctx.channel.send('切断完了')
     
 # ここまで
@@ -680,7 +680,7 @@ async def on_voice_state_update(member, before, after):
 
     # botだけ残った場合、切断
     if is_only_bot == True:
-        await vc_ctl.disconnect()
+        await vc_ctl.disconnect(force=True)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
 
 # サーバの名前が変わった時
@@ -697,7 +697,7 @@ async def on_guild_remove(guild):
         if vc.guild == guild:
             if channel.get(guild.id) is not None:
                 del channel[guild.id]
-            vc.disconnect()
+            vc.disconnect(force=True)
 
 def add_guild_db(guild):
     str_id = str(guild.id)
