@@ -118,16 +118,10 @@ async def summon(ctx):
         else:
             await vo_ch.channel.connect(timeout=10.0, reconnect=False)
         channel[guild_id] = ctx.channel
-        noties = get_notify(ctx)
         ctrl_db.set_session(datetime.datetime.now().replace(minute=0,second=0,microsecond=0), len(bot.voice_clients))
         activ = discord.Game('{}servers'.format(len(bot.voice_clients)))
         await bot.change_presence(activity=activ)
-        await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで'.format(prefix))
-        for noty in noties:
-            await ctx.channel.send(noty)
-        if len(noties) != 0:
-            await ctx.channel.send('喋太郎に何かあれば、だーやまんのDM( https://odaibako.net/u/gamerkohei )までお願いします。')
-        await ctx.channel.send('喋太郎の安定運用にご協力をお願いします🙌現状のサーバでは運用の維持が厳しいです。\rhttps://fantia.jp/gamerkohei ')
+        await ctx.channel.send('毎度おおきに。わいは喋太郎や。"{}help"コマンドで使い方を表示するで\r喋太郎のサポートサーバができました。今後はアプデ情報などこちらでアナウンスします。 https://discord.gg/Nvgq5XH \r喋太郎の安定運用にご協力をお願いします🙌現状のサーバでは運用の維持が厳しいです。\rhttps://fantia.jp/gamerkohei '.format(prefix))
     else :
         await ctx.channel.send('あんたボイスチャンネルおらへんやんけ！')
 
@@ -503,7 +497,7 @@ async def on_message(message):
                 await message.channel.send('コマンド操作をしてくれ')
                 return
         else:
-            await message.channel.send('喋太郎に何かあれば、だーやまん( https://twitter.com/gamerkohei )までリプライかDMをお願いします。')
+            await message.channel.send('喋太郎に何かあれば、以下のサーバまでお願いします。 https://discord.gg/Nvgq5XH ')
             return
 
     guild_id = message.guild.id # サーバID
